@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--命名空间-->
+<mapper namespace="com.qianfeng.dao.PatientDao">
+
+    <select id="queryAll" resultType="com.qianfeng.pojo.PatientCountByProvince">
+        select province,count(id) as count from patient
+        GROUP BY city;
+    </select>
+
+    <select id="queryByCity" resultType="com.qianfeng.pojo.PatientCountByCity" parameterType="string">
+        select city,count(id) as count from patient
+        GROUP BY district,province HAVING province=#{province}
+    </select>
+
+    <select id="queryByDistrict" resultType="com.qianfeng.pojo.Patient" parameterType="string">
+        select id,district,patient_name,patient_tel,patient_state from patient
+        where city = #{city}
+        ORDER BY create_info_datetime desc;
+    </select>
+
+    <select id="queryByTime" resultType="com.qianfeng.pojo.TimeCountByCity" parameterType="Hashmap">
+        select count(if(DATE_FORMAT(diagonse_datetime,'%Y-%m-%d')=#{time},true,NULL)) as diagonse_count ,
+        count(if(DATE_FORMAT(cure_datetime,'%Y-%m-%d')=#{time},true,NULL)) as cure_count
+        from patient
+        where city=#{city}
+    </select>
+
+    <select id="queryChange" resultType="com.qianfeng.pojo.CountChange" parameterType="string">
+        select count(id) as diacount,
+        count(if(patient_state='1',true,NULL)) as diatoday,
+        count(if(to_days(die_datetime) = to_days(now()),true,NULL)) as dietoday,
+        count(if(to_days(cure_datetime) = to_days(now()),true,NULL)) as curetoday,
+        count(if(to_days(diagonse_datetime) = to_days(now())-1,true,NULL)) as yescount,
+        count(if(patient_state='1',true,NULL))-count(if(to_days(cure_datetime) = to_days(now())-1,true,NULL))-count(if(to_days(die_datetime) = to_days(now())-1,true,NULL))
+        -count(if(to_days(grave_datetime) = to_days(now())-1,true,NULL)) as diathan,
+        count(if(to_days(die_datetime) = to_days(now()),true,NULL))-count(if(to_days(die_datetime) = to_days(now())-1,true,NULL)) as diethan,
+        count(if(to_days(diagonse_datetime) = to_days(now())-1,true,NULL))-count(if(to_days(cure_datetime) = to_days(now())-1,true,NULL)) as curethan
+        from patient where city=#{city}
+    </select>
+
+</mapper>
